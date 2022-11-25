@@ -22,15 +22,22 @@ app.layout = html.Div(
         }),
     
     html.Div(id='tabs-content-1'),
-    html.H5('FilePath'),
-    dcc.Input(id='input-on-submit', type='text', name='a'),
+    
     html.Div([
-        html.Button('Submit', id='submit-val', n_clicks=0),
+    html.Div([
+        html.Label('File Path : '),
+        dcc.Input(id='filepath', type='text', placeholder='Enter a valid path to your file',
+                  style={'color':'b',
+                             'width':'10vw',
+                             'height':20,
+                             'top':'300px',
+                             'left':'30px',
+                      }),
+        html.Button('Load from this path', id='submit-val', n_clicks=0),
         html.Div(id='container-button-basic',
              children='Enter a value and press submit')
-        ],
-        style={'display':'none'}),
-    
+        ]),
+        html.Label('Trial num : '),
         dcc.Input(id='trial', type="number", value=1,
                 placeholder="Index of {}".format("trial"),
                 style={'color':'b',
@@ -39,6 +46,7 @@ app.layout = html.Div(
                            'top':'300px',
                            'left':'30px'
                     }), # Temp
+        html.Label('Channel  : '),
         dcc.Input(id='channel', type="number", value=1,
                 placeholder="Index of {}".format("channel"),
                 style={'color':'b',
@@ -47,7 +55,7 @@ app.layout = html.Div(
                            'top':'300px',
                            'left':'30px'
                     }) # Temp
-        
+        ])
     ]
 )
 
@@ -55,10 +63,32 @@ app.layout = html.Div(
 @app.callback(
     Output('container-button-basic', 'children'),
     Input('submit-val', 'n_clicks'),
-    State('input-on-submit', 'value')
+    State('filepath', 'value')
 )
-def update_output(n_clicks, value):
-    return value
+def load_file(n_clicks, value):
+    
+    fp = str(value)
+    global d
+    
+    try:
+        
+        d = scipy.io.loadmat(fp)
+        render_content('tab-2', 1, 1)
+        return "File loaded."
+        
+    except:
+        
+        return "File not found; enter a valid path."
+           
+    
+# @app.callback(
+#     Output('container-button-basic', 'children'),
+#     Input('submit-val', 'n_clicks'),
+#     State('filepath', 'value')
+# )
+# def load_file_flagger(n_clicks, value):
+    
+#     return "Loading the file ..."
 
 
 @app.callback(
@@ -88,9 +118,9 @@ def render_content(*args):
         
         return html.Div([
             dcc.Markdown('''
-            ## LaTeX in a Markdown component:
+            ## TITLE ... :
         
-            This example uses the block delimiter:
+            This example from dash doc for latex code:
             $$
             \\frac{1}{(\\sqrt{\\phi \\sqrt{5}}-\\phi) e^{\\frac25 \\pi}} =
             1+\\frac{e^{-2\\pi}} {1+\\frac{e^{-4\\pi}} {1+\\frac{e^{-6\\pi}}
@@ -100,7 +130,7 @@ def render_content(*args):
             This example uses the inline delimiter:
             $E^2=m^2c^4+p^2c^2$
         
-            ## LaTeX in a Graph component:
+            ## LaTeX in a Graph:
         
             ''', mathjax=True),
         
@@ -118,7 +148,7 @@ def render_content(*args):
             
         except:
             
-            pass
+            return html.Div([html.H3("Load file of your data before plotting.")])
             
         return html.Div([
             html.H3('Plot signals'),
@@ -178,6 +208,5 @@ def render_content(*args):
 
 if __name__ == '__main__':
     
-    d = scipy.io.loadmat("data.mat")
     app.run_server(debug=True)
     
