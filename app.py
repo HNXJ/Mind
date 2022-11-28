@@ -1,10 +1,16 @@
-import scipy
-import numpy as np
-from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
+from dash import Dash, dcc, html
+from skimage import io
 
 
+import plotly.graph_objects as go
 import plotly.express as px
+
+
+import markdown as md
+import pandas as pd
+import numpy as np
+import scipy
 
 
 app = Dash(__name__)
@@ -67,18 +73,39 @@ app.layout = html.Div(
 )
 def load_file(n_clicks, value):
     
-    fp = str(value)
+    
     global d
     
     try:
         
-        d = scipy.io.loadmat(fp)
-        render_content('tab-2', 1, 1)
-        return "File loaded."
+        fp = str(value)
+        d = scipy.io.loadmat(fp) 
+        y = d['lfp']
+        y = y.shape
         
+        md1 = "$Sections : {}, Trials : {}, Channels : {}$".format(y[0], y[1], y[2])
+        
+        return html.Div([
+            dcc.Markdown('''
+                         
+            ## File details :
+        
+            Converting to NWB lfp format :
+            
+            ''' + md1 + ''' 
+            
+            Check if dimensions and their order in the file are in <Section , Trial , Channel , Signal> format (Ignore this message if they are correct)
+            
+            '''
+            , mathjax=True)
+            ])
+            
     except:
         
-        return "File not found; enter a valid path."
+        return html.Div(["File not found or it is broken. enter a valid path."],
+                        style={'color':'red',
+                               'fontsize':'10px',
+                            })
            
     
 # @app.callback(
@@ -90,12 +117,10 @@ def load_file(n_clicks, value):
     
 #     return "Loading the file ..."
 
-
 @app.callback(
     Output('tabs-content-1', 'children'),
     [Input('tabs', 'value'),
-    Input('trial', 'value'),
-    Input('channel', 'value')]
+    Input('trial', 'value')]
 )
 def render_content(*args):
     
@@ -103,7 +128,6 @@ def render_content(*args):
         
         tab = args[0]
         n = args[1]
-        m = args[2]
     
     except:
         
@@ -111,30 +135,31 @@ def render_content(*args):
     
     if tab == 'tab-1':
         
-        fig = px.line(x=[1, 2, 3, 4], y=[1, 4, 9, 16], title=r'$\alpha_{1c} = 352 \pm 11 \text{ km s}^{-1}$')
+        
+        fig = go.Figure()
+        
+        for i in range(10):
+            
+            y1 = np.random.rand(100) + i
+            x1 = np.linspace(0, 1, 100)
+            df1 = pd.DataFrame(dict(x = x1, y = y1))
+            fig.add_trace(go.Scatter(x = x1, y = y1))
+            
         fig.update_layout(
             xaxis_title=r'$\sqrt{(n_\text{c}(t|{T_\text{early}}))}$',
-            yaxis_title=r'$d, r \text{ (solar radius)}$')
+            yaxis_title=r'$d, r \text{ (solar radius)}$',
+            width=1740, height=740)
+        
+        md1 = "By HNXJ@GitHub, BastoslabVU.com".format(4, 7)
         
         return html.Div([
             dcc.Markdown('''
-            ## TITLE ... :
+            # Electrophysiological analysis GUI :
         
-            This example from dash doc for latex code:
-            $$
-            \\frac{1}{(\\sqrt{\\phi \\sqrt{5}}-\\phi) e^{\\frac25 \\pi}} =
-            1+\\frac{e^{-2\\pi}} {1+\\frac{e^{-4\\pi}} {1+\\frac{e^{-6\\pi}}
-            {1+\\frac{e^{-8\\pi}} {1+\\ldots} } } }
-            $$
+            
+            ''' + md1, mathjax=True),
         
-            This example uses the inline delimiter:
-            $E^2=m^2c^4+p^2c^2$
-        
-            ## LaTeX in a Graph:
-        
-            ''', mathjax=True),
-        
-            dcc.Graph(mathjax=True, figure=fig),
+            dcc.Graph(mathjax=True, figure=fig), #px.imshow(img_flowchart)
             ]
         )
     
@@ -150,25 +175,42 @@ def render_content(*args):
             
             return html.Div([html.H3("Load file of your data before plotting.")])
             
+        fig = go.Figure()
+        
+        for i in range(y.shape[1]):
+            
+            y1 = y[:, i] + 1.0 * i
+            x1 = np.linspace(0, 1, y.shape[0])
+            df1 = pd.DataFrame(dict(x = x1, y = y1))
+            fig.add_trace(go.Scatter(x = x1, y = y1))
+            
+        fig.update_layout(
+            yaxis_title=r'$\text{ Amplitude of signals }$',
+            xaxis_title=r'$\text{ Time }$',
+            width=1470, height=740)
+        
+        md1 = "By HNXJ@GitHub, {} p {}".format(4, 7)
+        
         return html.Div([
-            html.H3('Plot signals'),
-            dcc.Graph(
-                figure=dict(
-                    data=
-                    [dict(
-                        x=x,
-                        y=y[:, m],
-                        type='scatter'
-                        )
-                    ],
-                    layout=dict(
-                        title="Plot Title",
-                        xaxis_title="X Axis Title",
-                        yaxis_title="Y Axis Title",
-                        legend_title="Legend Title")
-                    )
-                )
-        ])
+            html.H3('Signal visualization'),
+            dcc.Tabs(id='tabs2', value='tab-2-1', children=[
+                dcc.Tab(label='LFPs', value='tab-2-1'),
+                dcc.Tab(label='Spectrum', value='tab-2-2'),
+                dcc.Tab(label='Spikes', value='tab-2-3'),
+                dcc.Tab(label='Connectivity', value='tab-2-4'),
+            ],
+            style={'color':'brown',
+                       'width':'99vw',
+                       'height':25
+                }),
+            html.Div(id='tabs-content-2'),
+            dcc.Markdown('''
+            
+            ''' + md1, mathjax=True),
+        
+            dcc.Graph(mathjax=True, figure=fig), #px.imshow(img_flowchart)
+            ]
+        )
     
     elif tab == 'tab-3':
         
@@ -205,7 +247,133 @@ def render_content(*args):
         print("?")
         
         
-
+@app.callback(
+    Output('tabs-content-2', 'children'),
+    [Input('tabs', 'value')]
+)
+def render_content(*args):
+    
+    try:
+        
+        tab = args[0]
+    
+    except:
+        
+        return
+    
+    if tab == 'tab-2-1':
+        
+        
+        fig = go.Figure()
+        
+        for i in range(10):
+            
+            y1 = np.random.rand(100) + i
+            x1 = np.linspace(0, 1, 100)
+            df1 = pd.DataFrame(dict(x = x1, y = y1))
+            fig.add_trace(go.Scatter(x = x1, y = y1))
+            
+        fig.update_layout(
+            xaxis_title=r'$\sqrt{(n_\text{c}(t|{T_\text{early}}))}$',
+            yaxis_title=r'$d, r \text{ (solar radius)}$',
+            width=1740, height=740)
+        
+        md1 = "By HNXJ@GitHub, BastoslabVU.com".format(4, 7)
+        
+        return html.Div([
+            dcc.Markdown('''
+            # Electrophysiological analysis GUI :
+        
+            
+            ''' + md1, mathjax=True),
+        
+            dcc.Graph(mathjax=True, figure=fig), #px.imshow(img_flowchart)
+            ]
+        )
+    
+    elif tab == 'tab-2-2':
+        
+        try:
+            
+            y = d['lfp']
+            y = np.reshape(y[:, :, n], [y.shape[0], y.shape[1]])
+            x = np.linspace(-1.5, 3, 4501)
+            
+        except:
+            
+            return html.Div([html.H3("Load file of your data before plotting.")])
+            
+        fig = go.Figure()
+        
+        for i in range(y.shape[1]):
+            
+            y1 = y[:, i] + 1.0 * i
+            x1 = np.linspace(0, 1, y.shape[0])
+            df1 = pd.DataFrame(dict(x = x1, y = y1))
+            fig.add_trace(go.Scatter(x = x1, y = y1))
+            
+        fig.update_layout(
+            yaxis_title=r'$\text{ Amplitude of signals }$',
+            xaxis_title=r'$\text{ Time }$',
+            width=1470, height=740)
+        
+        md1 = "By HNXJ@GitHub, {} p {}".format(4, 7)
+        
+        return html.Div([
+            html.H3('Signal visualization'),
+            dcc.Tabs(id='tabs', value='tab-1', children=[
+                dcc.Tab(label='LFPs', value='tab-2-1'),
+                dcc.Tab(label='Spectrum', value='tab-2-2'),
+                dcc.Tab(label='Spikes', value='tab-2-3'),
+                dcc.Tab(label='Connectivity', value='tab-2-4'),
+            ],
+            style={'color':'brown',
+                       'width':'99vw',
+                       'height':25
+                }),
+            dcc.Markdown('''
+            
+            ''' + md1, mathjax=True),
+        
+            dcc.Graph(mathjax=True, figure=fig), #px.imshow(img_flowchart)
+            ]
+        )
+    
+    elif tab == 'tab-2-3':
+        
+        return html.Div([
+            html.H3('Results'),
+            dcc.Graph(
+                figure=dict(
+                    data=[dict(
+                        x=[1, 2, 3],
+                        y=[5, 10, 6],
+                        type='bar'
+                    )]
+                )
+            )
+        ])
+    
+    elif tab == 'tab-2-4':
+        
+        return html.Div([
+            html.H3('Analysis'),
+            dcc.Graph(
+                figure=dict(
+                    data=[dict(
+                        x=[1, 2, 3],
+                        y=[5, -10, 6],
+                        type='bar'
+                    )]
+                )
+            )
+        ])
+    
+    else:
+        
+        print("?")
+        
+        
 if __name__ == '__main__':
     
     app.run_server(debug=True)
