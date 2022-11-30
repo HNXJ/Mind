@@ -51,6 +51,7 @@ def load_file(n_clicks, value):
         y = y.shape
         
         md1 = "$Sections : {}, Trials : {}, Channels : {}$".format(y[0], y[1], y[2])
+        render_content2('tab-2-1')
         
         return html.Div([
             dcc.Markdown('''
@@ -124,7 +125,7 @@ def render_content1(*args):
     elif tab == 'tab-2':
         
         return html.Div([
-            html.H3('Signal visualization'),
+            html.H3('Figures'),
             dcc.Tabs(id='tabs2', value='tab-2-1', children=[
                 dcc.Tab(label='LFPs', value='tab-2-1'),
                 dcc.Tab(label='Spectrum', value='tab-2-2'),
@@ -147,7 +148,6 @@ def render_content1(*args):
                 html.Button('Load from this path', id='submit-val', n_clicks=0),
                 html.Div(id='container-button-basic',
                      children='Enter a value and press submit'),
-            html.Div(id='tabs-content-2'),
             html.Div(id='container-button-basic',
                  children='Enter a value and press submit')
             ]),
@@ -201,7 +201,6 @@ def render_content2(*args):
     try:
         
         tab = args[0]
-        # n = args[1]
     
     except:
         
@@ -258,15 +257,20 @@ def render_content2(*args):
             return html.Div([html.H3("Load file of your data before plotting.")])
             
         __wdt = np.arange(7)
-        __psd = np.random.rand(100, 400)
-        fig = px.imshow(__psd)
-        md1 = "".format(4, 7)
+        _f, _t, __psd = scipy.signal.spectrogram(y[:, 1], 1000, nfft=1000, nperseg=100)
+        fmax_ = 100
+        fig = px.imshow(img=__psd[40:fmax_, :], x=_t*1000, y=_f[40:fmax_], aspect='auto')
+        print(__psd.shape)
+        fig.update_layout(
+            yaxis_title=r'$\text{ Frequency }$',
+            xaxis_title=r'$\text{ Time }$',
+            width=1470, height=740)
         
         return html.Div([
             html.H3('Spectrum'),
             dcc.Markdown('''
             
-            ''' + md1, mathjax=True),
+            ''', mathjax=True),
         
             dcc.Graph(mathjax=True, figure=fig),
             ]
@@ -274,18 +278,30 @@ def render_content2(*args):
     
     elif tab == 'tab-2-3':
         
+        # try: TODO : UNCOMMENT
+            
+        #     y = d['lfp']
+        #     y = np.reshape(y[:, :, 1], [y.shape[0], y.shape[1]])
+        #     x = np.linspace(-1.5, 3, 4501)
+            
+        # except:
+            
+        #     return html.Div([html.H3("Load file of your data before plotting.")])
+            
+        __wdt = np.arange(7)
+        __psd = np.random.rand(100, 400) > 0.91
+        fig = px.imshow(__psd)
+        md1 = "".format(4, 7)
+        
         return html.Div([
             html.H3('Spikes'),
-            dcc.Graph(
-                figure=dict(
-                    data=[dict(
-                        x=[1, 2, 3],
-                        y=[5, -10, 6],
-                        type='bar'
-                    )]
-                )
-            )
-        ])
+            dcc.Markdown('''
+            
+            ''' + md1, mathjax=True),
+        
+            dcc.Graph(mathjax=True, figure=fig),
+            ]
+        )
     
     else:
         
